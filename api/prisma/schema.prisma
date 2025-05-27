@@ -25,3 +25,15 @@ model Solicitud {
   fechaUltimaModificacion DateTime            @updatedAt
   servicios              ServicioSolicitado[]
 }
+
+model ServicioSolicitado {
+  id             Int         @id @default(autoincrement())
+  solicitudId    Int
+  nombreServicio String
+  fechaReunion   DateTime
+  estadoServicio EstadoServicio
+  comentarios    String?
+  costoEstimado  Float?
+
+  solicitud Solicitud @relation(fields: [solicitudId], references: [id])
+}
