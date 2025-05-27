@@ -37,3 +37,17 @@ model ServicioSolicitado {
 
   solicitud Solicitud @relation(fields: [solicitudId], references: [id])
 }
+
+enum EstadoSolicitud {
+  ABIERTA
+  EN_PROCESO
+  CERRADA
+  CANCELADA
+}
+
+enum EstadoServicio {
+  PENDIENTE
+  APROBADO
+  RECHAZADO
+  VENCIDO
+}
