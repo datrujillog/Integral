@@ -56,52 +56,72 @@ exports.createRequest = async (req, res) => {
     }
 }
 
-exports.listRequests = async (req, res) => {
+exports.getRequests = async (req, res) => {
     try {
         const {
             estado,
             cliente,
+            fechaDesde,
+            fechaHasta,
             page = 1,
             limit = 10,
-            order = 'desc'
+            orden = 'desc'
         } = req.query;
 
-        const where = {};
+        const filtros = {};
 
-        if (estado) {
-            where.estado = estado.toUpperCase();
-        }
+        if (estado) filtros.estado = estado;
 
         if (cliente) {
-            where.cliente = {
+            filtros.cliente = {
                 contains: cliente,
                 mode: 'insensitive'
             };
         }
 
-        const solicitudes = await prisma.solicitud.findMany({
-            where,
-            skip: (page - 1) * limit,
-            take: parseInt(limit),
-            orderBy: {
-                fechaSolicitud: order === 'asc' ? 'asc' : 'desc'
-            },
-            include: {
-                servicios: true
-            }
-        });
+        // if (fechaDesde || fechaHasta) {
+        //     filtros.fechaSolicitud = {};
+        //     if (fechaDesde) filtros.fechaSolicitud.gte = new Date(fechaDesde);
+        //     if (fechaHasta) filtros.fechaSolicitud.lte = new Date(fechaHasta);
+        // }
 
-        const total = await prisma.solicitud.count({ where });
+        if (fechaDesde || fechaHasta) {
+            filtros.fechaSolicitud = {};
+            if (fechaDesde) filtros.fechaSolicitud.gte = new Date(fechaDesde);
+            if (fechaHasta) {
+                // Sumar un día a fechaHasta para incluir todo el día
+                const fechaHastaObj = new Date(fechaHasta);
+                fechaHastaObj.setDate(fechaHastaObj.getDate() + 1);
+                filtros.fechaSolicitud.lt = fechaHastaObj;
+            }
+        }
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const take = parseInt(limit);
+
+        const [solicitudes, total] = await Promise.all([
+            prisma.solicitud.findMany({
+                where: filtros,
+                skip,
+                take,
+                orderBy: {
+                    fechaSolicitud: orden === 'asc' ? 'asc' : 'desc'
+                },
+                include: {
+                    servicios: true
+                }
+            }),
+            prisma.solicitud.count({ where: filtros })
+        ]);
 
         return res.json({
-            data: solicitudes,
             total,
-            currentPage: parseInt(page),
-            totalPages: Math.ceil(total / limit)
+            page: parseInt(page),
+            limit: take,
+            data: solicitudes
         });
-
     } catch (error) {
-        console.error('Error al listar solicitudes:', error);
-        return res.status(500).json({ error: 'Error al obtener solicitudes' });
+        console.error('Error al obtener solicitudes:', error);
+        return res.status(500).json({ error: 'Error interno del servidor' });
     }
 };
