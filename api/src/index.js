@@ -5,16 +5,16 @@ require('dotenv').config();
 const app = express();
 
 // Import routes
-// const solicitudesRoutes = require('./routes/solicitudes.routes');
-// const serviciosRoutes = require('./routes/servicios.routes');
+const requestsRoutes = require('./routes/solicitudes.routes');
+
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Use routes
-// app.use('/api/solicitudes', solicitudesRoutes);
-// app.use('/api/servicios', serviciosRoutes);
+app.use('/api/solicitudes', requestsRoutes);
+
 
 
 const PORT = process.env.PORT || 5000;
