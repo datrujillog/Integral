@@ -55,3 +55,53 @@ exports.createRequest = async (req, res) => {
 
     }
 }
+
+exports.listRequests = async (req, res) => {
+    try {
+        const {
+            estado,
+            cliente,
+            page = 1,
+            limit = 10,
+            order = 'desc'
+        } = req.query;
+
+        const where = {};
+
+        if (estado) {
+            where.estado = estado.toUpperCase();
+        }
+
+        if (cliente) {
+            where.cliente = {
+                contains: cliente,
+                mode: 'insensitive'
+            };
+        }
+
+        const solicitudes = await prisma.solicitud.findMany({
+            where,
+            skip: (page - 1) * limit,
+            take: parseInt(limit),
+            orderBy: {
+                fechaSolicitud: order === 'asc' ? 'asc' : 'desc'
+            },
+            include: {
+                servicios: true
+            }
+        });
+
+        const total = await prisma.solicitud.count({ where });
+
+        return res.json({
+            data: solicitudes,
+            total,
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(total / limit)
+        });
+
+    } catch (error) {
+        console.error('Error al listar solicitudes:', error);
+        return res.status(500).json({ error: 'Error al obtener solicitudes' });
+    }
+};
