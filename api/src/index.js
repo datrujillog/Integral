@@ -6,6 +6,7 @@ const app = express();
 
 // Import routes
 const requestsRoutes = require('./routes/solicitudes.routes');
+const servicesRoutes = require('./routes/servicios.routes');
 
 
 app.use(cors());
@@ -14,6 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Use routes
 app.use('/api/solicitudes', requestsRoutes);
+app.use('/api/servicios', servicesRoutes);
 
 
 
