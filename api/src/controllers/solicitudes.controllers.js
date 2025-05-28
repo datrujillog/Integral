@@ -173,3 +173,42 @@ exports.updateRequest = async (req, res) => {
         return res.status(500).json({ error: 'Error interno del servidor' });
     }
 };
+
+
+exports.deleteRequest = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const solicitud = await prisma.solicitud.findUnique({
+            where: { id: parseInt(id) },
+            include: { servicios: true }
+        });
+
+        if (!solicitud) {
+            return res.status(404).json({ error: 'Solicitud no encontrada.' });
+        }
+
+        const tieneAprobados = solicitud.servicios.some(
+            s => s.estadoServicio === 'APROBADO'
+        );
+
+        if (tieneAprobados) {
+            return res.status(403).json({
+                error: 'No se puede eliminar la solicitud porque tiene servicios aprobados.'
+            });
+        }
+
+        await prisma.servicioSolicitado.deleteMany({
+            where: { solicitudId: solicitud.id }
+        });
+
+        await prisma.solicitud.delete({
+            where: { id: solicitud.id }
+        });
+
+        return res.status(204).send();
+    } catch (error) {
+        console.error('Error al eliminar solicitud:', error);
+        return res.status(500).json({ error: 'Error interno del servidor' });
+    }
+};
