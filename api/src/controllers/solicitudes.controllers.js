@@ -125,3 +125,51 @@ exports.getRequests = async (req, res) => {
         return res.status(500).json({ error: 'Error interno del servidor' });
     }
 };
+
+exports.updateRequest = async (req, res) => {
+    const { id } = req.params;
+    const { cliente, emailCliente, observaciones } = req.body;
+
+    try {
+
+        const solicitud = await prisma.solicitud.findUnique({
+            where: { id: parseInt(id) },
+            include: { servicios: true }
+        });
+
+        if (!solicitud) {
+            return res.status(404).json({ error: 'Solicitud no encontrada' });
+        }
+
+        // Verificar que tenga al menos un servicio en estado PENDIENTE
+        const tienePendientes = solicitud.servicios.some(
+            s => s.estadoServicio === 'PENDIENTE'
+        );
+
+        if (!tienePendientes) {
+            return res.status(403).json({
+                error: 'La solicitud no puede modificarse porque no tiene servicios en estado PENDIENTE.'
+            });
+        }
+
+        // Validar campos
+        if (emailCliente && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailCliente)) {
+            return res.status(400).json({ error: 'Email no válido.' });
+        }
+
+        // Realizar actualización
+        const solicitudActualizada = await prisma.solicitud.update({
+            where: { id: parseInt(id) },
+            data: {
+                cliente,
+                emailCliente,
+                observaciones
+            }
+        });
+
+        return res.json(solicitudActualizada);
+    } catch (error) {
+        console.error('Error al actualizar solicitud:', error);
+        return res.status(500).json({ error: 'Error interno del servidor' });
+    }
+};
