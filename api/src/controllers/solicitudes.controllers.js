@@ -6,6 +6,14 @@ exports.createRequest = async (req, res) => {
 
         const { cliente, emailCliente, observaciones, servicios } = req.body;
 
+        if (!cliente || !emailCliente || !Array.isArray(servicios) || servicios.length === 0) {
+            return res.status(400).json({ error: 'Datos incompletos o servicios vacíos.' });
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailCliente)) {
+            return res.status(400).json({ error: 'Email no válido.' });
+        }
+
         const ahora = new Date();
         for (const s of servicios) {
             if (!s.nombreServicio || !s.fechaReunion) {
