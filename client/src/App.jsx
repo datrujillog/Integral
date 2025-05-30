@@ -37,7 +37,7 @@ import './App.css'
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import CrearSolicitud from './pages/CrearSolicitud';
-// import DetalleSolicitud from './pages/DetalleSolicitud';
+import DetalleSolicitud from './pages/DetalleSolicitud';
 
 function App() {
   return (
@@ -45,7 +45,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/crear" element={<CrearSolicitud />} />
-        {/* <Route path="/solicitud/:id" element={<DetalleSolicitud />} /> */}
+        <Route path="/solicitud/:id" element={<DetalleSolicitud />} />
       </Routes>
     </BrowserRouter>
   );
