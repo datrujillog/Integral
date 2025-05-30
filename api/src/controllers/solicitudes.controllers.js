@@ -64,7 +64,7 @@ exports.getRequests = async (req, res) => {
             fechaDesde,
             fechaHasta,
             page = 1,
-            limit = 10,
+            limit = 5,
             orden = 'desc'
         } = req.query;
 
