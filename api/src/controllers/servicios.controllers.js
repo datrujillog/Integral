@@ -124,3 +124,30 @@ exports.updateService = async (req, res) => {
         return res.status(500).json({ error: 'Error interno del servidor' });
     }
 };
+
+exports.removeService = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const servicio = await prisma.servicioSolicitado.findUnique({
+            where: { id: parseInt(id) }
+        });
+
+        if (!servicio) {
+            return res.status(404).json({ error: 'Servicio no encontrado.' });
+        }
+
+        if (servicio.estadoServicio !== 'PENDIENTE') {
+            return res.status(403).json({ error: 'Solo se pueden eliminar servicios en estado PENDIENTE.' });
+        }
+
+        await prisma.servicioSolicitado.delete({
+            where: { id: parseInt(id) }
+        });
+
+        return res.status(204).send(); // Sin contenido
+    } catch (error) {
+        console.error('Error al eliminar servicio:', error);
+        return res.status(500).json({ error: 'Error interno del servidor' });
+    }
+};
