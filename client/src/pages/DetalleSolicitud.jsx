@@ -7,6 +7,8 @@ function DetalleSolicitud() {
     const [solicitud, setSolicitud] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [actualizando, setActualizando] = useState(false);
+    const [mensaje, setMensaje] = useState(null);
 
     const fetchDetalle = async () => {
         try {
@@ -17,6 +19,37 @@ function DetalleSolicitud() {
             setError("Error al cargar la solicitud.");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const actualizarServicio = async (servicioId, nuevoEstado, costoEstimado) => {
+        try {
+            setActualizando(true);
+            await api.put(`/servicios/${servicioId}`, {
+                estadoServicio: nuevoEstado,
+                ...(costoEstimado && { costoEstimado })
+            });
+            setMensaje(`Servicio actualizado a ${nuevoEstado}`);
+            fetchDetalle();
+        } catch (error) {
+            console.error(error);
+            setMensaje("Error al actualizar servicio");
+        } finally {
+            setActualizando(false);
+        }
+    };
+
+    const eliminarServicio = async (servicioId) => {
+        try {
+            setActualizando(true);
+            await api.delete(`/servicios/${servicioId}`);
+            setMensaje("Servicio eliminado");
+            fetchDetalle();
+        } catch (error) {
+            console.error(error);
+            setMensaje("No se puede eliminar este servicio");
+        } finally {
+            setActualizando(false);
         }
     };
 
@@ -45,6 +78,13 @@ function DetalleSolicitud() {
             </div>
 
             <h2 className="text-xl font-semibold text-gray-800 mb-2">Servicios</h2>
+
+            {mensaje && (
+                <div className="mb-4 text-sm text-blue-700 bg-blue-100 p-2 rounded border border-blue-300">
+                    {mensaje}
+                </div>
+            )}
+
             <div className="overflow-x-auto">
                 <table className="min-w-full border border-gray-300">
                     <thead>
@@ -52,8 +92,9 @@ function DetalleSolicitud() {
                             <th className="p-2 border">Nombre Servicio</th>
                             <th className="p-2 border">Fecha Reunión</th>
                             <th className="p-2 border">Estado</th>
-                            <th className="p-2 border">Costo Estimado</th>
+                            <th className="p-2 border">Costo</th>
                             <th className="p-2 border">Comentarios</th>
+                            <th className="p-2 border">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -62,13 +103,48 @@ function DetalleSolicitud() {
                                 <td className="p-2 border">{s.nombreServicio}</td>
                                 <td className="p-2 border">{new Date(s.fechaReunion).toLocaleString()}</td>
                                 <td className="p-2 border">{s.estadoServicio}</td>
-                                <td className="p-2 border">{s.costoEstimado ? `$${s.costoEstimado}` : "-"}</td>
+                                <td className="p-2 border">
+                                    {s.costoEstimado ? `$${s.costoEstimado}` : "-"}
+                                </td>
                                 <td className="p-2 border">{s.comentarios || "-"}</td>
+                                <td className="p-2 border space-x-2">
+                                    {s.estadoServicio === "PENDIENTE" ? (
+                                        <>
+                                            <button
+                                                onClick={() => {
+                                                    const costo = prompt("Costo estimado:");
+                                                    if (costo && !isNaN(costo)) {
+                                                        actualizarServicio(s.id, "APROBADO", parseFloat(costo));
+                                                    }
+                                                }}
+                                                className="text-green-600 hover:underline"
+                                            >
+                                                Aprobar
+                                            </button>
+                                            <button
+                                                onClick={() => actualizarServicio(s.id, "RECHAZADO")}
+                                                className="text-yellow-600 hover:underline"
+                                            >
+                                                Rechazar
+                                            </button>
+                                            <button
+                                                onClick={() => eliminarServicio(s.id)}
+                                                className="text-red-600 hover:underline"
+                                            >
+                                                Eliminar
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <span className="text-gray-400 italic">No editable</span>
+                                    )}
+                                </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
+
+            {actualizando && <p className="mt-4 text-sm text-gray-500">Actualizando...</p>}
         </div>
     );
 }
