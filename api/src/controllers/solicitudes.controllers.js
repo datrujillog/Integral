@@ -233,3 +233,19 @@ exports.getRequestById = async (req, res) => {
         return res.status(500).json({ error: 'Error interno del servidor' });
     }
 };
+
+exports.obtainRequestServices = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const servicios = await prisma.servicioSolicitado.findMany({
+            where: { solicitudId: parseInt(id) }
+        });
+
+        return res.json(servicios);
+    } catch (error) {
+        console.error('Error al obtener servicios de la solicitud:', error);
+        return res.status(500).json({ error: 'Error interno del servidor' });
+    }
+};
+
