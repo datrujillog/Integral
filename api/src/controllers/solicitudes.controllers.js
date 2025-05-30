@@ -212,3 +212,24 @@ exports.deleteRequest = async (req, res) => {
         return res.status(500).json({ error: 'Error interno del servidor' });
     }
 };
+
+
+exports.getRequestById = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const solicitud = await prisma.solicitud.findUnique({
+            where: { id: parseInt(id) },
+            include: { servicios: true }
+        });
+
+        if (!solicitud) {
+            return res.status(404).json({ error: 'Solicitud no encontrada.' });
+        }
+
+        return res.json(solicitud);
+    } catch (error) {
+        console.error('Error al obtener solicitud:', error);
+        return res.status(500).json({ error: 'Error interno del servidor' });
+    }
+};
