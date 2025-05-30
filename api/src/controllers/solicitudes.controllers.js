@@ -249,3 +249,49 @@ exports.obtainRequestServices = async (req, res) => {
     }
 };
 
+
+exports.procesarSolicitudesPendientes = async (req, res) => {
+    try {
+        const ahora = new Date();
+
+        // 1. Marcar servicios vencidos
+        const serviciosVencidos = await prisma.servicioSolicitado.updateMany({
+            where: {
+                estadoServicio: 'PENDIENTE',
+                fechaReunion: { lt: ahora }
+            },
+            data: {
+                estadoServicio: 'VENCIDO'
+            }
+        });
+
+        // 2. Cerrar solicitudes donde todos los servicios están en estado final
+        const solicitudes = await prisma.solicitud.findMany({
+            include: { servicios: true }
+        });
+
+        const idsParaCerrar = solicitudes
+            .filter(s =>
+                s.servicios.length > 0 &&
+                s.servicios.every(servicio =>
+                    ['APROBADO', 'RECHAZADO', 'VENCIDO'].includes(servicio.estadoServicio)
+                )
+            )
+            .map(s => s.id);
+
+        const solicitudesCerradas = await prisma.solicitud.updateMany({
+            where: { id: { in: idsParaCerrar } },
+            data: { estado: 'CERRADA' }
+        });
+
+        return res.json({
+            serviciosVencidos: serviciosVencidos.count,
+            solicitudesCerradas: solicitudesCerradas.count,
+            mensaje: 'Procesamiento completado con éxito.'
+        });
+    } catch (error) {
+        console.error('Error al procesar solicitudes pendientes:', error);
+        return res.status(500).json({ error: 'Error interno del servidor' });
+    }
+};
+
