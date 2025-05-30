@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createRequest, getRequests, updateRequest, deleteRequest, getRequestById, obtainRequestServices } = require('../controllers/solicitudes.controllers');
+const { createRequest, getRequests, updateRequest, deleteRequest, getRequestById, obtainRequestServices, procesarSolicitudesPendientes } = require('../controllers/solicitudes.controllers');
 const { addService } = require('../controllers/servicios.controllers');
 
 router.post('/', createRequest);
@@ -9,6 +9,9 @@ router.put('/:id', updateRequest);
 router.delete('/:id', deleteRequest);
 router.get('/:id', getRequestById);
 router.get('/:id/servicios', obtainRequestServices);
+
+router.post('/procesar-pendientes', procesarSolicitudesPendientes);
+
 
 
 
