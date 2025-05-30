@@ -9,8 +9,11 @@ function Home() {
     const [fechaDesde, setFechaDesde] = useState("");
     const [fechaHasta, setFechaHasta] = useState("");
     const [page, setPage] = useState(1);
-    const [limit] = useState(5); // puedes cambiar a 20, 50, etc.
+    const [limit] = useState(5);
     const [total, setTotal] = useState(0);
+
+    const [procesando, setProcesando] = useState(false);
+    const [resultadoProcesamiento, setResultadoProcesamiento] = useState(null);
 
     const fetchSolicitudes = async () => {
         try {
@@ -31,12 +34,26 @@ function Home() {
         }
     };
 
+    const procesarPendientes = async () => {
+        try {
+            setProcesando(true);
+            const res = await api.post("/solicitudes/procesar-pendientes");
+            setResultadoProcesamiento(res.data);
+            fetchSolicitudes();
+        } catch (error) {
+            console.error("Error al procesar pendientes", error);
+            setResultadoProcesamiento({ error: "Error al procesar." });
+        } finally {
+            setProcesando(false);
+        }
+    };
+
     useEffect(() => {
         fetchSolicitudes();
     }, [page]);
 
     return (
-        <><div className="p-6">
+        <div className="p-6">
             <h1 className="text-3xl font-bold mb-6">Solicitudes de Servicios</h1>
 
             {/* Filtros */}
@@ -46,7 +63,8 @@ function Home() {
                     placeholder="Buscar por cliente"
                     value={cliente}
                     onChange={(e) => setCliente(e.target.value)}
-                    className="p-2 border rounded" />
+                    className="p-2 border rounded"
+                />
                 <select
                     value={estado}
                     onChange={(e) => setEstado(e.target.value)}
@@ -62,30 +80,56 @@ function Home() {
                     type="date"
                     value={fechaDesde}
                     onChange={(e) => setFechaDesde(e.target.value)}
-                    className="p-2 border rounded" />
+                    className="p-2 border rounded"
+                />
                 <input
                     type="date"
                     value={fechaHasta}
                     onChange={(e) => setFechaHasta(e.target.value)}
-                    className="p-2 border rounded" />
+                    className="p-2 border rounded"
+                />
             </div>
 
-            <button
-                onClick={fetchSolicitudes}
-                className="bg-blue-600 text-white px-4 py-2 rounded mb-4"
-            >
-                Aplicar filtros
-            </button>
+            {/* Botones */}
+            <div className="mb-4 flex flex-wrap gap-2">
+                <button
+                    onClick={fetchSolicitudes}
+                    className="bg-blue-600 text-white px-4 py-2 rounded"
+                >
+                    Aplicar filtros
+                </button>
+                <Link
+                    to="/crear"
+                    className="bg-green-600 text-white px-4 py-2 rounded"
+                >
+                    Crear nueva solicitud
+                </Link>
+                <button
+                    onClick={procesarPendientes}
+                    className="bg-purple-600 text-white px-4 py-2 rounded"
+                >
+                    Procesar pendientes
+                </button>
+            </div>
 
-            <Link
-                to="/crear"
-                className="bg-green-600 text-white px-4 py-2 rounded ml-2"
-            >
-                Crear nueva solicitud
-            </Link>
+            {/* Mensaje de procesamiento */}
+            {procesando && <p className="text-gray-500 mb-2">Procesando...</p>}
 
-            {/* Tabla de resultados */}
-            <div className="mt-6 overflow-x-auto">
+            {resultadoProcesamiento && (
+                <div className="mb-4 p-3 bg-purple-100 border border-purple-400 rounded text-sm text-purple-900">
+                    {resultadoProcesamiento.error ? (
+                        <p>{resultadoProcesamiento.error}</p>
+                    ) : (
+                        <p>
+                            ✅ {resultadoProcesamiento.serviciosVencidos} servicios vencidos procesados<br />
+                            ✅ {resultadoProcesamiento.solicitudesCerradas} solicitudes cerradas automáticamente
+                        </p>
+                    )}
+                </div>
+            )}
+
+            {/* Tabla */}
+            <div className="overflow-x-auto">
                 <table className="min-w-full border border-gray-300">
                     <thead>
                         <tr className="bg-gray-100 text-left">
@@ -125,7 +169,9 @@ function Home() {
                     </tbody>
                 </table>
             </div>
-        </div><div className="mt-6 flex justify-between items-center">
+
+            {/* Paginación */}
+            <div className="mt-6 flex justify-between items-center">
                 <button
                     disabled={page === 1}
                     onClick={() => setPage(page - 1)}
@@ -133,11 +179,9 @@ function Home() {
                 >
                     Anterior
                 </button>
-
                 <span className="text-sm text-gray-600">
                     Página {page} de {Math.ceil(total / limit)}
                 </span>
-
                 <button
                     disabled={page * limit >= total}
                     onClick={() => setPage(page + 1)}
@@ -145,7 +189,8 @@ function Home() {
                 >
                     Siguiente
                 </button>
-            </div></>
+            </div>
+        </div>
     );
 }
 
